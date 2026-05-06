@@ -1,5 +1,6 @@
 import bisect
-from typing import List, Tuple
+import logging
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -14,6 +15,8 @@ from groundingdino.util.misc import clean_state_dict
 from groundingdino.util.slconfig import SLConfig
 from groundingdino.util.utils import get_phrases_from_posmap
 
+logger = logging.getLogger(__name__)
+
 # ----------------------------------------------------------------------------------------------------------------------
 # OLD API
 # ----------------------------------------------------------------------------------------------------------------------
@@ -26,7 +29,18 @@ def preprocess_caption(caption: str) -> str:
     return result + "."
 
 
-def load_model(model_config_path: str, model_checkpoint_path: str, device: str = "cuda"):
+def load_model(model_config_path: str, model_checkpoint_path: Optional[str] = None, device: str = "cuda"):
+    if model_checkpoint_path is None:
+        logger.warning(
+            "Checkpoint is not given — downloading from HuggingFace Hub. Defaulting to SwinT checkpoint. "
+            "To specify a checkpoint, please provide the `model_checkpoint_path` argument."
+        )
+        from huggingface_hub import hf_hub_download
+
+        model_checkpoint_path = hf_hub_download(
+            repo_id="ShilongLiu/GroundingDINO", filename="groundingdino_swint_ogc.pth"
+        )
+
     args = SLConfig.fromfile(model_config_path)
     args.device = device
     model = build_model(args)
@@ -133,7 +147,7 @@ def annotate(image_source: np.ndarray, boxes: torch.Tensor, logits: torch.Tensor
 
 
 class Model:
-    def __init__(self, model_config_path: str, model_checkpoint_path: str, device: str = "cuda"):
+    def __init__(self, model_config_path: str, model_checkpoint_path: Optional[str] = None, device: str = "cuda"):
         self.model = load_model(
             model_config_path=model_config_path, model_checkpoint_path=model_checkpoint_path, device=device
         ).to(device)

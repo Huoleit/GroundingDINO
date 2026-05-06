@@ -56,13 +56,13 @@ def get_sine_pos_embed(
 def gen_encoder_output_proposals(memory: Tensor, memory_padding_mask: Tensor, spatial_shapes: Tensor, learnedwh=None):
     """
     Input:
-        - memory: bs, \sum{hw}, d_model
-        - memory_padding_mask: bs, \sum{hw}
+        - memory: bs, sum{hw}, d_model
+        - memory_padding_mask: bs, sum{hw}
         - spatial_shapes: nlevel, 2
         - learnedwh: 2
     Output:
-        - output_memory: bs, \sum{hw}, d_model
-        - output_proposals: bs, \sum{hw}, 4
+        - output_memory: bs, sum{hw}, d_model
+        - output_proposals: bs, sum{hw}, 4
     """
     N_, S_, C_ = memory.shape
     proposals = []
@@ -77,6 +77,7 @@ def gen_encoder_output_proposals(memory: Tensor, memory_padding_mask: Tensor, sp
         grid_y, grid_x = torch.meshgrid(
             torch.linspace(0, H_ - 1, H_, dtype=torch.float32, device=memory.device),
             torch.linspace(0, W_ - 1, W_, dtype=torch.float32, device=memory.device),
+            indexing="ij",
         )
         grid = torch.cat([grid_x.unsqueeze(-1), grid_y.unsqueeze(-1)], -1)  # H_, W_, 2
 
