@@ -35,9 +35,7 @@ def clean_state_dict(state_dict):
     return new_state_dict
 
 
-def renorm(
-    img: torch.FloatTensor, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-) -> torch.FloatTensor:
+def renorm(img: torch.FloatTensor, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) -> torch.FloatTensor:
     # img: tensor(3,H,W) or tensor(B,3,H,W)
     # return: same as img
     assert img.dim() == 3 or img.dim() == 4, "img.dim() should be 3 or 4 but %d" % img.dim()
@@ -165,9 +163,7 @@ def to_device(item, device):
     elif isinstance(item, dict):
         return {k: to_device(v, device) for k, v in item.items()}
     else:
-        raise NotImplementedError(
-            "Call Shilong if you use other containers! type: {}".format(type(item))
-        )
+        raise NotImplementedError("Call Shilong if you use other containers! type: {}".format(type(item)))
 
 
 #
@@ -288,13 +284,13 @@ class APOPMeter:
         self.tp += torch.logical_and(pred == 1, gt == 1).sum().item()
         self.fp += torch.logical_and(pred == 1, gt == 0).sum().item()
         self.tn += torch.logical_and(pred == 0, gt == 0).sum().item()
-        self.tn += torch.logical_and(pred == 1, gt == 0).sum().item()
+        self.fn += torch.logical_and(pred == 0, gt == 1).sum().item()
 
     def update_cm(self, tp, fp, tn, fn):
         self.tp += tp
         self.fp += fp
         self.tn += tn
-        self.tn += fn
+        self.fn += fn
 
 
 def inverse_sigmoid(x, eps=1e-5):
@@ -486,9 +482,7 @@ class ModelEma(torch.nn.Module):
 
     def _update(self, model, update_fn):
         with torch.no_grad():
-            for ema_v, model_v in zip(
-                self.module.state_dict().values(), model.state_dict().values()
-            ):
+            for ema_v, model_v in zip(self.module.state_dict().values(), model.state_dict().values()):
                 if self.device is not None:
                     model_v = model_v.to(device=self.device)
                 ema_v.copy_(update_fn(ema_v, model_v))
@@ -591,9 +585,7 @@ def targets_to(targets: List[Dict[str, Any]], device):
         "caption",
         "dataset_type",
     ]
-    return [
-        {k: v.to(device) if k not in excluded_keys else v for k, v in t.items()} for t in targets
-    ]
+    return [{k: v.to(device) if k not in excluded_keys else v for k, v in t.items()} for t in targets]
 
 
 def get_phrases_from_posmap(
@@ -601,7 +593,7 @@ def get_phrases_from_posmap(
 ):
     assert isinstance(posmap, torch.Tensor), "posmap must be torch.Tensor"
     if posmap.dim() == 1:
-        posmap[0: left_idx + 1] = False
+        posmap[0 : left_idx + 1] = False
         posmap[right_idx:] = False
         non_zero_idx = posmap.nonzero(as_tuple=True)[0].tolist()
         token_ids = [tokenized["input_ids"][i] for i in non_zero_idx]
